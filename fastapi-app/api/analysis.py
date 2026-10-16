@@ -13,7 +13,7 @@ from common.deps import get_current_user
 from common.exception import BizException
 from common.response import fail, ok
 from exports import pdf as pdf_export
-from models import AgentRunLog, Analysis, Clarification, ProductFact, User
+from models import AgentRunLog, Analysis, Clarification, FileAsset, ProductFact, User
 
 router = APIRouter()
 prefix = "/api/fto"
@@ -170,6 +170,30 @@ async def list_facts(aid: int, user: User = Depends(get_current_user)):
         "id": f.id, "feature": f.feature, "feature_type": f.feature_type,
         "value": f.value, "is_unknown": f.is_unknown, "status": f.status,
     } for f in rows])
+
+
+@router.get("/analysis/{aid}/files")
+async def list_files(aid: int, user: User = Depends(get_current_user)):
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    assets = await FileAsset.filter(analysis_id=aid).order_by("id")
+    return ok([{"id": f.id, "type": f.file_type, "name": f.original_name} for f in assets])
+
+
+@router.get("/analysis/{aid}/trace")
+async def analysis_trace(aid: int, user: User = Depends(get_current_user)):
+    """单次分析的 Agent 完整链路（节点/输入输出/tool_calls/耗时）。"""
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    logs = await AgentRunLog.filter(analysis_id=aid).order_by("id")
+    return ok([{
+        "id": l.id, "node": l.node, "intent": l.intent, "status": l.status,
+        "duration_ms": l.duration_ms, "input": l.input, "output": l.output,
+        "tool_calls": l.tool_calls,
+        "create_time": l.create_time.strftime("%Y-%m-%d %H:%M:%S") if l.create_time else None,
+    } for l in logs])
 
 
 @router.get("/analysis/{aid}/status")

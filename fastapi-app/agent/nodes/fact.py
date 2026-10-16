@@ -60,12 +60,19 @@ async def fact_node(state: dict) -> dict:
     try:
         existing = await ProductFact.filter(analysis_id=analysis_id).order_by("id")
         if not existing:
+            # 读取上传附件内容（草图/参数表/权要草稿）
+            from agent.file_parser import extract_analysis_files
+            file_extra = await extract_analysis_files(analysis_id)
+            full_desc = desc
+            if file_extra.get("text"):
+                full_desc = f"{desc}\n{file_extra['text']}"
+
             raw = None
             if await llm.llm_enabled():
-                raw = await _extract_llm(desc)
+                raw = await _extract_llm(full_desc)
             if raw is None:
                 degraded = True
-                raw = _extract_rule(desc)
+                raw = _extract_rule(full_desc)
             for r in raw:
                 await ProductFact.create(
                     analysis_id=analysis_id,
@@ -73,6 +80,13 @@ async def fact_node(state: dict) -> dict:
                     value=r.get("value") or None,
                     is_unknown=r.get("is_unknown", 0),
                     status=3 if r.get("is_unknown") else 1,
+                )
+            # 有草图但无视觉模型识别 → 标记为未知项，触发追问补充
+            if file_extra.get("unrecognized_images", 0) > 0:
+                await ProductFact.create(
+                    analysis_id=analysis_id,
+                    feature="结构草图内容", feature_type="结构",
+                    value=None, is_unknown=1, status=3,
                 )
             existing = await ProductFact.filter(analysis_id=analysis_id).order_by("id")
 

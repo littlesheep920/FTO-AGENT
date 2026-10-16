@@ -6,6 +6,7 @@ const routes = [
   { path: '/', name: 'Home', component: () => import('../views/front/Home.vue'), meta: { title: '分析列表', requireAuth: true } },
   { path: '/analysis/:id', name: 'AnalysisDetail', component: () => import('../views/front/AnalysisDetail.vue'), meta: { title: '分析详情', requireAuth: true } },
   { path: '/admin/logs', name: 'Logs', component: () => import('../views/manager/Logs.vue'), meta: { title: 'Agent 日志', requireAdmin: true } },
+  { path: '/admin/dashboard', name: 'Dashboard', component: () => import('../views/manager/Dashboard.vue'), meta: { title: '运营大屏', requireAdmin: true } },
   { path: '/admin/prompts', name: 'Prompts', component: () => import('../views/manager/Prompts.vue'), meta: { title: 'Prompt 管理', requireAdmin: true } },
   { path: '/admin/llm', name: 'LlmConfig', component: () => import('../views/manager/LlmConfig.vue'), meta: { title: '模型配置', requireAdmin: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' },

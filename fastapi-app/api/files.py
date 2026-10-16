@@ -2,14 +2,14 @@
 import os
 import uuid
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
 import settings
 from common.deps import get_current_user
 from common.exception import BizException
 from common.response import ok
-from models import FileAsset, User
+from models import Analysis, FileAsset, User
 
 router = APIRouter()
 prefix = "/api/files"
@@ -18,7 +18,8 @@ ALLOWED_EXT = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".xlsx", ".xls", ".pdf"
 
 
 @router.post("/upload")
-async def upload(file: UploadFile = File(...), user: User = Depends(get_current_user)):
+async def upload(file: UploadFile = File(...), analysis_id: int = Form(None),
+                 user: User = Depends(get_current_user)):
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in ALLOWED_EXT:
         raise BizException(f"不支持的文件类型：{ext}", 400)
@@ -35,11 +36,25 @@ async def upload(file: UploadFile = File(...), user: User = Depends(get_current_
     file_type = "image" if ext in {".png", ".jpg", ".jpeg", ".webp", ".bmp"} else \
                 "excel" if ext in {".xlsx", ".xls"} else \
                 "pdf" if ext == ".pdf" else "text"
+
+    # 绑定到分析（可选）
+    analysis = None
+    if analysis_id:
+        analysis = await Analysis.filter(id=analysis_id, user_id=user.id).first()
+        if not analysis:
+            raise BizException("分析不存在或无权访问", 404)
+
     asset = await FileAsset.create(
-        user=user, file_type=file_type, file_path=path,
+        user=user, analysis=analysis, file_type=file_type, file_path=path,
         original_name=file.filename, status=1,
     )
-    return ok({"id": asset.id, "path": path, "type": file_type, "name": file.filename})
+    if analysis:
+        files = list(analysis.input_files or [])
+        files.append(asset.id)
+        analysis.input_files = files
+        await analysis.save()
+    return ok({"id": asset.id, "path": path, "type": file_type, "name": file.filename,
+               "analysis_id": analysis_id})
 
 
 @router.get("/download/{filename}")

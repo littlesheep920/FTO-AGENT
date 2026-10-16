@@ -6,7 +6,7 @@ import settings
 from common.deps import get_current_admin
 from common.exception import BizException
 from common.response import fail, ok
-from models import AgentRunLog, LlmConfig, PromptTemplate, Admin
+from models import AgentRunLog, LlmConfig, PromptTemplate, Admin, Analysis, Patent, User
 
 router = APIRouter()
 prefix = "/api/fto"
@@ -115,4 +115,36 @@ async def test_llm(_: Admin = Depends(get_current_admin)):
 
 @router.get("/dashboard/overview")
 async def dashboard(_: Admin = Depends(get_current_admin)):
-    return fail("运营大屏将在 M4 实现", 501)
+    total_users = await User.all().count()
+    total_analyses = await Analysis.all().count()
+    total_patents = await Patent.all().count()
+
+    risk = {"high": 0, "medium": 0, "low": 0, "excluded": 0}
+    for a in await Analysis.all():
+        rs = a.risk_summary or {}
+        risk["high"] += rs.get("high", 0)
+        risk["medium"] += rs.get("medium", 0)
+        risk["low"] += rs.get("low", 0)
+        risk["excluded"] += rs.get("excluded", 0)
+
+    node_stats = {}
+    for l in await AgentRunLog.all():
+        s = node_stats.setdefault(l.node, {"total": 0, "success": 0, "degraded": 0, "failed": 0})
+        s["total"] += 1
+        if l.status == 1:
+            s["success"] += 1
+        elif l.status == 2:
+            s["degraded"] += 1
+        else:
+            s["failed"] += 1
+
+    source_stats = {}
+    for p in await Patent.all():
+        key = p.source or "unknown"
+        source_stats[key] = source_stats.get(key, 0) + 1
+
+    return ok({
+        "total_users": total_users, "total_analyses": total_analyses,
+        "total_patents": total_patents, "risk_distribution": risk,
+        "node_stats": node_stats, "source_stats": source_stats,
+    })

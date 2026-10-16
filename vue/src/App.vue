@@ -5,6 +5,7 @@
       <el-menu mode="horizontal" :default-active="$route.path" router :ellipsis="false" class="nav">
         <el-menu-item v-if="store.token" index="/">分析列表</el-menu-item>
         <template v-if="store.isAdmin">
+          <el-menu-item index="/admin/dashboard">运营大屏</el-menu-item>
           <el-menu-item index="/admin/logs">Agent 日志</el-menu-item>
           <el-menu-item index="/admin/prompts">Prompt 管理</el-menu-item>
           <el-menu-item index="/admin/llm">模型配置</el-menu-item>
