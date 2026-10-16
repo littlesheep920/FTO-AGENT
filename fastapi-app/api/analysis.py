@@ -1,11 +1,14 @@
-"""FTO 分析：创建 / 列表 / 详情 / 删除；执行类接口为 M2-M5 占位。"""
+"""FTO 分析：创建 / 列表 / 详情 / 删除 / 执行 / 追问 / 状态 / 卷宗 / 导出。"""
+import json
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from agent import graph as agent_graph
 from common.deps import get_current_user
 from common.exception import BizException
 from common.response import fail, ok
-from models import Analysis, User
+from models import AgentRunLog, Analysis, Clarification, ProductFact, User
 
 router = APIRouter()
 prefix = "/api/fto"
@@ -15,6 +18,10 @@ class CreateBody(BaseModel):
     title: str = "未命名分析"
     product_description: str = ""
     jurisdiction: str = "CN"
+
+
+class ClarifyBody(BaseModel):
+    answers: list  # [{fact_id, answer}]
 
 
 def _analysis_to_dict(a: Analysis) -> dict:
@@ -28,6 +35,10 @@ def _analysis_to_dict(a: Analysis) -> dict:
         "create_time": a.create_time.strftime("%Y-%m-%d %H:%M:%S") if a.create_time else None,
         "update_time": a.update_time.strftime("%Y-%m-%d %H:%M:%S") if a.update_time else None,
     }
+
+
+def _resolve(aid: int, user: User) -> Analysis:
+    return Analysis.filter(id=aid, user=user).first()
 
 
 @router.post("/analysis")
@@ -48,7 +59,7 @@ async def list_analysis(user: User = Depends(get_current_user)):
 
 @router.get("/analysis/{aid}")
 async def get_analysis(aid: int, user: User = Depends(get_current_user)):
-    a = await Analysis.filter(id=aid, user=user).first()
+    a = await _resolve(aid, user)
     if not a:
         raise BizException("分析不存在", 404)
     return ok(_analysis_to_dict(a))
@@ -56,33 +67,120 @@ async def get_analysis(aid: int, user: User = Depends(get_current_user)):
 
 @router.delete("/analysis/{aid}")
 async def delete_analysis(aid: int, user: User = Depends(get_current_user)):
-    a = await Analysis.filter(id=aid, user=user).first()
+    a = await _resolve(aid, user)
     if not a:
         raise BizException("分析不存在", 404)
     await a.delete()
     return ok()
 
 
-# ---------- M2+ 占位（后续里程碑实现） ----------
+# ---------- 执行（M2：真实编排） ----------
 
 @router.post("/analysis/{aid}/run")
 async def run_analysis(aid: int, user: User = Depends(get_current_user)):
-    return fail("分析执行将在 M2-M4 实现（Agent 编排 + 检索 + 比对）", 501)
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    try:
+        result = await agent_graph.run_analysis(aid)
+    except Exception as e:
+        a.status = 5
+        await a.save()
+        return fail(f"分析执行失败：{e}", 500)
+
+    if result.get("needs_clarification"):
+        a.status = 3
+        await a.save()
+        return ok({
+            "status": 3,
+            "need_clarification": True,
+            "questions": result.get("clarification_questions", []),
+        })
+    if result.get("error"):
+        a.status = 5
+        await a.save()
+        return fail(f"分析执行失败：{result['error']}", 500)
+
+    return ok({"status": 4, "dossier": result.get("dossier")})
+
+
+@router.post("/analysis/{aid}/clarify")
+async def clarify(aid: int, body: ClarifyBody, user: User = Depends(get_current_user)):
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+
+    # 回填答案到产品事实
+    for item in body.answers:
+        if not isinstance(item, dict):
+            continue
+        fid, ans = item.get("fact_id"), item.get("answer")
+        if fid is None or ans is None:
+            continue
+        f = await ProductFact.filter(id=fid, analysis_id=aid).first()
+        if f:
+            f.value = str(ans)
+            f.status = 1
+            await f.save()
+
+    # 标记追问已回复
+    c = await Clarification.filter(analysis_id=aid, round=1, answer__isnull=True).first()
+    if c:
+        c.answer = json.dumps(body.answers, ensure_ascii=False)
+        await c.save()
+
+    # 重新执行完整流水线
+    try:
+        result = await agent_graph.run_analysis(aid)
+    except Exception as e:
+        a.status = 5
+        await a.save()
+        return fail(f"分析执行失败：{e}", 500)
+
+    if result.get("error"):
+        a.status = 5
+        await a.save()
+        return fail(f"分析执行失败：{result['error']}", 500)
+
+    return ok({"status": 4, "dossier": result.get("dossier")})
 
 
 @router.get("/analysis/{aid}/status")
 async def analysis_status(aid: int, user: User = Depends(get_current_user)):
-    return fail("进度查询将在 M2 实现", 501)
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    last = await AgentRunLog.filter(analysis_id=aid).order_by("-id").first()
+    return ok({
+        "status": a.status,
+        "current_step": last.node if last else None,
+        "risk_summary": a.risk_summary,
+    })
 
 
 @router.get("/analysis/{aid}/dossier")
 async def analysis_dossier(aid: int, user: User = Depends(get_current_user)):
-    return fail("Dossier 将在 M5 实现", 501)
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    return ok({
+        "risk_summary": a.risk_summary,
+        "executive_summary": a.executive_summary,
+        "dossier_markdown": a.dossier_markdown,
+        "disclaimer": a.disclaimer,
+    })
 
+
+# ---------- 导出 ----------
 
 @router.get("/analysis/{aid}/export/markdown")
 async def export_markdown(aid: int, user: User = Depends(get_current_user)):
-    return fail("Markdown 导出将在 M5 实现", 501)
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    if not a.dossier_markdown:
+        raise BizException("卷宗尚未生成", 400)
+    return ok({"markdown": a.dossier_markdown})
 
 
 @router.get("/analysis/{aid}/export/pdf")

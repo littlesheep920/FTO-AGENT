@@ -2,9 +2,10 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-files/*
-data/*
-!files/.gitkeep
-!data/.gitkeep
+files/
+data/
 .env
 *.sqlite3
+*.sqlite3-*
+*.db
+.DS_Store

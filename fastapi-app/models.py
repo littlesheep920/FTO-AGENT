@@ -91,7 +91,7 @@ class Analysis(TimestampMixin):
     user = fields.ForeignKeyField(
         "models.User", related_name="analyses", on_delete=fields.CASCADE)
     title = fields.CharField(max_length=200)
-    status = fields.SmallIntField(default=1)             # 1草稿/2进行中/3待人工复核/4完成/5失败
+    status = fields.SmallIntField(default=1)             # 1草稿/2进行中/3待追问/4完成/5失败
     product_description = fields.TextField(null=True)
     input_files = fields.JSONField(null=True)            # 上传文件 id 列表
     jurisdiction = fields.CharField(max_length=20, default="CN")
