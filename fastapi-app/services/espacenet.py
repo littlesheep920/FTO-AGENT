@@ -13,13 +13,21 @@ def _local(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
-def _find_text(el, tag):
+def _find_first(el, tag):
+    """在 el 的后代中找第一个 local name == tag 的元素。"""
     if el is None:
         return None
     for child in el.iter():
         if _local(child.tag) == tag:
-            return (child.text or "").strip() or None
+            return child
     return None
+
+
+def _text(el):
+    """取元素全部文本（含嵌套子元素）。"""
+    if el is None:
+        return None
+    return "".join(el.itertext()).strip() or None
 
 
 class EspacenetSource(BaseSource):
@@ -34,7 +42,7 @@ class EspacenetSource(BaseSource):
                 "Accept": "application/xml"}
 
     def _build_cql(self, expression, jurisdiction):
-        # 简化：从表达式提取关键词 + 分类号拼 CQL（完整 CQL 映射留待细化）
+        # 简化：从表达式提取分类号拼 CQL（完整 CQL 映射留待细化）
         import re
         ipc = re.findall(r"[A-H]\d{2}[A-Z]\d{1,2}/\d{2,4}", expression)
         pn = f' pn="{jurisdiction}"' if jurisdiction else ""
@@ -53,28 +61,31 @@ class EspacenetSource(BaseSource):
         for doc in root.iter():
             if _local(doc.tag) != "exchange-document":
                 continue
-            bib = next((c for c in doc if _local(c.tag) == "bibliographic-data"), None)
+            bib = _find_first(doc, "bibliographic-data")
             if bib is None:
                 continue
-            pubref = _find_text(bib, "publication-reference")
-            country = _find_text(bib, "country")
-            number = _find_text(bib, "doc-number")
-            kind = _find_text(bib, "kind")
+
+            # 公开号：publication-reference/document-id 下的 country+doc-number+kind
+            pubref = _find_first(bib, "publication-reference")
+            country = _text(_find_first(pubref, "country"))
+            number = _text(_find_first(pubref, "doc-number"))
+            kind = _text(_find_first(pubref, "kind"))
             pn = f"{country or ''}{number or ''}{kind or ''}"
-            ipc = [((_find_text(bib, "text"))) for _ in [0]] if False else []
-            # 分类
+
+            # IPC 分类（classification-ipcr 元素，文本如 "A61M 25/092"）
             ipc_codes = []
             for c in bib.iter():
                 if _local(c.tag) == "classification-ipcr":
-                    t = (c.text or "").strip()
+                    t = _text(c)
                     if t:
-                        ipc_codes.append(t)
+                        ipc_codes.append(t.replace(" ", ""))
+
             docs.append(PatentDoc(
                 patent_no=pn,
-                title=_find_text(bib, "invention-title"),
-                abstract=_find_text(bib, "abstract"),
-                applicant=_find_text(bib, "applicant"),
-                inventor=_find_text(bib, "inventor"),
+                title=_text(_find_first(bib, "invention-title")),
+                abstract=_text(_find_first(bib, "abstract")),
+                applicant=_text(_find_first(bib, "applicant")),
+                inventor=_text(_find_first(bib, "inventor")),
                 ipc_codes=ipc_codes,
                 source=self.name,
                 source_url=f"https://worldwide.espacenet.com/patent/search?q={pn}",

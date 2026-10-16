@@ -36,7 +36,7 @@ async def upload(file: UploadFile = File(...), user: User = Depends(get_current_
                 "excel" if ext in {".xlsx", ".xls"} else \
                 "pdf" if ext == ".pdf" else "text"
     asset = await FileAsset.create(
-        file_type=file_type, file_path=path,
+        user=user, file_type=file_type, file_path=path,
         original_name=file.filename, status=1,
     )
     return ok({"id": asset.id, "path": path, "type": file_type, "name": file.filename})
@@ -44,7 +44,14 @@ async def upload(file: UploadFile = File(...), user: User = Depends(get_current_
 
 @router.get("/download/{filename}")
 async def download(filename: str, user: User = Depends(get_current_user)):
+    # 防路径穿越：只允许纯文件名（不含路径分隔符/上级目录）
+    if os.path.basename(filename) != filename or ".." in filename:
+        raise BizException("非法文件名", 400)
     path = os.path.join(settings.UPLOAD_DIR, filename)
+    # 所有权校验：只能下载自己上传的文件
+    asset = await FileAsset.filter(file_path=path, user_id=user.id).first()
+    if not asset:
+        raise BizException("文件不存在或无权访问", 404)
     if not os.path.isfile(path):
         raise BizException("文件不存在", 404)
-    return FileResponse(path, filename=filename)
+    return FileResponse(path, filename=asset.original_name or filename)

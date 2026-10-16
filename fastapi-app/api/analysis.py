@@ -37,8 +37,8 @@ def _analysis_to_dict(a: Analysis) -> dict:
     }
 
 
-def _resolve(aid: int, user: User) -> Analysis:
-    return Analysis.filter(id=aid, user=user).first()
+async def _resolve(aid: int, user: User):
+    return await Analysis.filter(id=aid, user=user).first()
 
 
 @router.post("/analysis")
@@ -138,12 +138,21 @@ async def clarify(aid: int, body: ClarifyBody, user: User = Depends(get_current_
         await a.save()
         return fail(f"分析执行失败：{e}", 500)
 
+    if result.get("needs_clarification"):
+        a.status = 3
+        await a.save()
+        return ok({
+            "status": 3,
+            "need_clarification": True,
+            "questions": result.get("clarification_questions", []),
+            "degraded": result.get("degraded"),
+        })
     if result.get("error"):
         a.status = 5
         await a.save()
         return fail(f"分析执行失败：{result['error']}", 500)
 
-    return ok({"status": 4, "dossier": result.get("dossier")})
+    return ok({"status": 4, "dossier": result.get("dossier"), "degraded": result.get("degraded")})
 
 
 @router.get("/analysis/{aid}/facts")

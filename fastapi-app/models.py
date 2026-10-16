@@ -319,6 +319,9 @@ class FileAsset(Model):
     analysis = fields.ForeignKeyField(
         "models.Analysis", related_name="file_assets",
         on_delete=fields.CASCADE, null=True)
+    user = fields.ForeignKeyField(
+        "models.User", related_name="file_assets",
+        on_delete=fields.CASCADE, null=True)
     file_type = fields.CharField(max_length=20, null=True)  # image/excel/pdf/text
     file_path = fields.CharField(max_length=255)
     original_name = fields.CharField(max_length=255, null=True)
