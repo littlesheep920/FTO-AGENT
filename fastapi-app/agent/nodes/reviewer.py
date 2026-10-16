@@ -27,6 +27,8 @@ def _build_dossier(state: dict, summary: dict, verdict: str, exec_summary: str) 
         "## 3. 专利清单",
     ]
     if patents:
+        if any(p.get("source") == "mock" for p in patents):
+            lines.append("> ⚠️ 当前为演示数据（mock），非真实检索结果")
         lines += ["| 专利号 | 标题 | 申请人 | 法律状态 |", "|---|---|---|---|"]
         for p in patents:
             lines.append(f"| {p.get('patent_no', '')} | {p.get('title', '')} | {p.get('applicant', '')} | {p.get('legal_status', '')} |")
@@ -70,6 +72,8 @@ async def reviewer_node(state: dict) -> dict:
     try:
         patents = state.get("patents", [])
         risks = state.get("risk_assessment", [])
+        legal_statuses = state.get("legal_statuses", [])
+        is_mock = all((p.get("source") == "mock") for p in patents) if patents else False
         summary = {"high": 0, "medium": 0, "low": 0, "excluded": 0}
         for r in risks:
             lv = r.get("risk_level")
@@ -79,15 +83,19 @@ async def reviewer_node(state: dict) -> dict:
                 summary["medium"] += 1
             elif lv == "低":
                 summary["low"] += 1
+        summary["excluded"] = sum(1 for s in legal_statuses if s.get("admissible") == 2)
 
         if summary["high"] > 0:
             verdict = "发现高风险专利，建议规避设计并交由律师复核"
         elif summary["medium"] > 0:
             verdict = "存在中风险专利，建议人工复核 Claim Chart"
         elif patents:
-            verdict = "未发现全面覆盖的高风险专利，建议继续推进（仍需律师确认）"
+            if is_mock:
+                verdict = f"演示数据（mock）：检索到 {len(patents)} 件示例专利，正式分析需接入真实数据源"
+            else:
+                verdict = "未发现全面覆盖的高风险专利，建议继续推进（仍需律师确认）"
         else:
-            verdict = "M2 阶段：检索尚未接入真实数据源，无候选专利（待 M3）"
+            verdict = "检索无候选专利（数据源不可用或未命中），请检查数据源配置"
 
         exec_summary = (f"命中高风险 {summary['high']} 件、中风险 {summary['medium']} 件、"
                         f"低风险 {summary['low']} 件。结论：{verdict}。")

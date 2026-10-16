@@ -44,6 +44,12 @@ SEARCH_TTL_HOURS = int(_get("SEARCH_TTL_HOURS", "24"))
 SEARCH_CONCURRENCY = int(_get("SEARCH_CONCURRENCY", "3"))
 SEARCH_INTERVAL = float(_get("SEARCH_INTERVAL", "0.2"))
 
+# ---------- 专利数据源 ----------
+# 降级链顺序：google_patents -> espacenet -> patentscope（可加 mock 用于演示）
+PATENT_SOURCES = _get("PATENT_SOURCES", "google_patents,espacenet,patentscope")
+OPS_API_KEY = _get("OPS_API_KEY", "")           # Espacenet OPS 官方 key
+PATENT_TIMEOUT = int(_get("PATENT_TIMEOUT", "30"))
+
 # ---------- 上传 ----------
 UPLOAD_DIR = _get("UPLOAD_DIR", "files")
 MAX_UPLOAD_MB = int(_get("MAX_UPLOAD_MB", "8"))
