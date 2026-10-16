@@ -9,3 +9,5 @@ data/
 *.sqlite3-*
 *.db
 .DS_Store
+node_modules/
+dist/
