@@ -191,7 +191,7 @@ npm run dev        # http://localhost:5173（已代理 /api 到后端 9090）
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| LLM_API_KEY | 空（回退 DEEPSEEK_API_KEY） | **为空则全局降级为本地规则引擎** |
+| LLM_API_KEY | 空 | **为空则全局降级为本地规则引擎** |
 | LLM_BASE_URL | https://api.deepseek.com/v1 | OpenAI 协议，兼容各家 |
 | LLM_CHAT_MODEL | deepseek-chat | |
 | LLM_VISION_MODEL | 空 | 视觉模型（如 qwen-vl-max，用于草图识图） |
@@ -262,7 +262,6 @@ npm run dev        # http://localhost:5173（已代理 /api 到后端 9090）
 5. **多模态输入闭环** —— 文字描述 + 草图（识图）+ 参数表（Excel 解析）+ 权要草稿（PDF 抽取），统一进 fact 提取。
 6. **模型与 Prompt 在线可调、热生效** —— 8 个场景 Prompt 存库在线编辑；模型配置支持各家 OpenAI 协议一键切换，保存即生效。
 7. **三端导出** —— 网页交互视图 + Markdown 下载 + PDF（中文字体嵌入，reportlab）。
-8. **工程细节经得起追问** —— 防死循环双保险、路径穿越防护、文件所有权校验、API Key 不落库/掩码返回、追问幂等重跑、检索缓存 TTL。
 
 ---
 
