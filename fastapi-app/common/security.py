@@ -34,11 +34,12 @@ def _b64(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode().rstrip("=")
 
 
-def create_token(user_id: int, username: str) -> str:
-    """HMAC 签名 Token：payload 签名后 base64，形如 body.sig。"""
+def create_token(user_id: int, username: str, role: int = 1) -> str:
+    """HMAC 签名 Token：payload 签名后 base64，形如 body.sig。role: 1=用户 9=管理员。"""
     payload = {
         "uid": user_id,
         "un": username,
+        "role": role,
         "exp": int(time.time()) + settings.TOKEN_TTL_DAYS * 86400,
     }
     body = _b64(json.dumps(payload).encode())

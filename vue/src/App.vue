@@ -1,9 +1,9 @@
 <template>
   <el-container class="app">
     <el-header v-if="store.isLoggedIn" class="header">
-      <div class="logo" @click="$router.push('/')">FTO 专利自由实施分析系统</div>
+      <div class="logo" @click="$router.push(store.isAdmin ? '/admin/logs' : '/')">FTO 专利自由实施分析系统</div>
       <el-menu mode="horizontal" :default-active="$route.path" router :ellipsis="false" class="nav">
-        <el-menu-item index="/">分析列表</el-menu-item>
+        <el-menu-item v-if="store.token" index="/">分析列表</el-menu-item>
         <template v-if="store.isAdmin">
           <el-menu-item index="/admin/logs">Agent 日志</el-menu-item>
           <el-menu-item index="/admin/prompts">Prompt 管理</el-menu-item>
@@ -12,7 +12,8 @@
       </el-menu>
       <div class="user">
         <el-tag v-if="store.isAdmin" size="small" type="warning">管理员</el-tag>
-        <span class="uname">{{ store.userInfo?.nickname || store.userInfo?.username }}</span>
+        <el-tag v-else size="small" type="info">用户</el-tag>
+        <span class="uname">{{ store.displayName }}</span>
         <el-button link type="primary" @click="logout">退出</el-button>
       </div>
     </el-header>

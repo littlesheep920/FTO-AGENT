@@ -56,7 +56,8 @@ def req_json(method, path, data=None, token=None, timeout=300):
 
 
 try:
-    tok = req_json("POST", "/api/auth/login", {"username": "admin", "password": "admin123"})[1]["data"]["token"]
+    req_json("POST", "/api/auth/register", {"username": "tester", "password": "123456"})
+    tok = req_json("POST", "/api/auth/login", {"username": "tester", "password": "123456"})[1]["data"]["token"]
     aid = req_json("POST", "/api/fto/analysis", {
         "title": "控弯导管 FTO（M5 导出测试）",
         "product_description": "一种控弯导管，远端可弯曲段由拉线机构控制弯曲方向，管体材料为聚氨酯，外径2.7mm，弯曲角度0-180度，拉线为单根不锈钢牵引丝",

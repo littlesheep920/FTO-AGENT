@@ -34,7 +34,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import request from '../../utils/request'
+import { adminRequest as request } from '../../utils/request'
 
 const loading = ref(false)
 const saving = ref(false)

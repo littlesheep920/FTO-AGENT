@@ -23,17 +23,28 @@ class TimestampMixin(Model):
 # ============ 基础表 ============
 
 class User(TimestampMixin):
-    """用户（合并管理员：role=9 为管理员）。"""
+    """普通用户（门户端）。"""
     username = fields.CharField(max_length=50, unique=True)
     password = fields.CharField(max_length=128)          # pbkdf2 摘要
     nickname = fields.CharField(max_length=50, null=True)
     avatar = fields.CharField(max_length=255, null=True)
     email = fields.CharField(max_length=100, null=True)
-    role = fields.SmallIntField(default=1)               # 1 普通用户 / 9 管理员
+    role = fields.SmallIntField(default=1)               # 恒 1（历史遗留，权限以 Admin 表为准）
     status = fields.SmallIntField(default=1)             # 1 正常 / 0 禁用
 
     class Meta:
         table = "user"
+
+
+class Admin(TimestampMixin):
+    """管理员（管理端，与普通用户彻底分离）。"""
+    username = fields.CharField(max_length=50, unique=True)
+    password = fields.CharField(max_length=128)          # pbkdf2 摘要
+    nickname = fields.CharField(max_length=50, null=True)
+    status = fields.SmallIntField(default=1)             # 1 正常 / 0 禁用
+
+    class Meta:
+        table = "admin"
 
 
 class AgentRunLog(Model):

@@ -7,7 +7,7 @@ from common.deps import user_to_dict
 from common.exception import BizException
 from common.response import ok
 from common.security import create_token, hash_password, verify_password
-from models import User
+from models import Admin, User
 
 router = APIRouter()
 prefix = "/api/auth"
@@ -66,3 +66,18 @@ async def reset_password(body: ResetBody):
     user.password = hash_password(body.new_password)
     await user.save()
     return ok()
+
+
+# ---------- 管理员登录（独立 admin 表） ----------
+
+@router.post("/admin/login")
+async def admin_login(body: LoginBody):
+    admin = await Admin.filter(username=body.username).first()
+    if not admin or not verify_password(body.password, admin.password):
+        raise BizException("管理员用户名或密码错误", 401)
+    if admin.status != 1:
+        raise BizException("管理员账号已禁用", 403)
+    return ok({
+        "token": create_token(admin.id, admin.username, role=9),
+        "admin": {"id": admin.id, "username": admin.username, "nickname": admin.nickname},
+    })

@@ -82,7 +82,7 @@ try:
     show("analysis/detail", req("GET", f"/api/fto/analysis/{aid}", token=token))
     show("run-stub", req("POST", f"/api/fto/analysis/{aid}/run", token=token))
 
-    admin_token = req("POST", "/api/auth/login", {"username": "admin", "password": "admin123"})[1]["data"]["token"]
+    admin_token = req("POST", "/api/auth/admin/login", {"username": "admin", "password": "admin123"})[1]["data"]["token"]
     show("admin/prompt", req("GET", "/api/fto/prompt", token=admin_token))
     show("admin/llm-config", req("GET", "/api/fto/llm/config", token=admin_token))
     show("admin/agent-logs", req("GET", "/api/fto/agent/logs", token=admin_token))

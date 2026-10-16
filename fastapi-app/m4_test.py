@@ -52,7 +52,8 @@ def req(method, path, data=None, token=None, timeout=180):
 
 
 try:
-    tok = req("POST", "/api/auth/login", {"username": "admin", "password": "admin123"})[1]["data"]["token"]
+    req("POST", "/api/auth/register", {"username": "tester", "password": "123456"})
+    tok = req("POST", "/api/auth/login", {"username": "tester", "password": "123456"})[1]["data"]["token"]
     res = req("POST", "/api/fto/analysis", {
         "title": "控弯导管 FTO（M4 完整分析链）",
         "product_description": "一种控弯导管，远端可弯曲段由拉线机构控制弯曲方向，管体材料为聚氨酯",

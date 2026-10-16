@@ -63,7 +63,9 @@ def login(username, password):
 
 
 try:
-    token = login("admin", "admin123")
+    req("POST", "/api/auth/register", {"username": "tester", "password": "123456"})
+    token = login("tester", "123456")
+    admin_token = req("POST", "/api/auth/admin/login", {"username": "admin", "password": "admin123"})[1]["data"]["token"]
 
     # ---- 路径 A：完整流水线（描述含"弯/拉线"，不触发追问）----
     res = req("POST", "/api/fto/analysis", {
@@ -85,7 +87,7 @@ try:
     print(f"[A] dossier markdown 长度={len(md)}，含'执行摘要'={'执行摘要' in md}")
 
     # 检查 agent_run_log 是否记录了各节点
-    r = req("GET", "/api/fto/agent/logs?size=20", token=token)
+    r = req("GET", "/api/fto/agent/logs?size=20", token=admin_token)
     nodes = [x["node"] for x in r[1]["data"]["records"] if x.get("analysis_id") == aid]
     print(f"[A] agent_logs 节点序列: {nodes}")
 

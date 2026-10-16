@@ -5,7 +5,7 @@
 import settings
 from common.security import hash_password
 from agent.prompts import BUILTIN_PROMPTS
-from models import IpcCode, LlmConfig, PromptTemplate, User
+from models import Admin, IpcCode, LlmConfig, PromptTemplate
 
 # 8 个 Agent 场景的默认 Prompt（与 agent/prompts.py 同源）
 DEFAULT_PROMPTS = BUILTIN_PROMPTS
@@ -27,11 +27,11 @@ IPC_SEED = [
 
 
 async def seed_all():
-    # 1. 管理员（默认 admin / admin123）
-    if not await User.filter(username="admin").exists():
-        await User.create(
+    # 1. 管理员（独立 admin 表，默认 admin / admin123）
+    if not await Admin.filter(username="admin").exists():
+        await Admin.create(
             username="admin", password=hash_password("admin123"),
-            nickname="管理员", role=9, status=1,
+            nickname="管理员", status=1,
         )
 
     # 2. IPC/CPC 分类锚点

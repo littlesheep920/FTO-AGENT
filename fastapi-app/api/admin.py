@@ -6,7 +6,7 @@ import settings
 from common.deps import get_current_admin
 from common.exception import BizException
 from common.response import fail, ok
-from models import AgentRunLog, LlmConfig, PromptTemplate, User
+from models import AgentRunLog, LlmConfig, PromptTemplate, Admin
 
 router = APIRouter()
 prefix = "/api/fto"
@@ -15,7 +15,7 @@ prefix = "/api/fto"
 # ---------- Agent 日志 ----------
 
 @router.get("/agent/logs")
-async def agent_logs(page: int = 1, size: int = 20, _: User = Depends(get_current_admin)):
+async def agent_logs(page: int = 1, size: int = 20, _: Admin = Depends(get_current_admin)):
     total = await AgentRunLog.all().count()
     rows = await AgentRunLog.all().order_by("-id").offset((page - 1) * size).limit(size)
     return ok({
@@ -29,7 +29,7 @@ async def agent_logs(page: int = 1, size: int = 20, _: User = Depends(get_curren
 
 
 @router.get("/agent/stats")
-async def agent_stats(_: User = Depends(get_current_admin)):
+async def agent_stats(_: Admin = Depends(get_current_admin)):
     return fail("节点统计将在 M2 实现", 501)
 
 
@@ -42,7 +42,7 @@ class PromptBody(BaseModel):
 
 
 @router.get("/prompt")
-async def list_prompt(_: User = Depends(get_current_admin)):
+async def list_prompt(_: Admin = Depends(get_current_admin)):
     rows = await PromptTemplate.all().order_by("id")
     return ok([{
         "id": p.id, "scene": p.scene, "content": p.content,
@@ -51,7 +51,7 @@ async def list_prompt(_: User = Depends(get_current_admin)):
 
 
 @router.put("/prompt")
-async def save_prompt(body: PromptBody, _: User = Depends(get_current_admin)):
+async def save_prompt(body: PromptBody, _: Admin = Depends(get_current_admin)):
     p = await PromptTemplate.filter(scene=body.scene).first()
     if not p:
         p = await PromptTemplate.create(scene=body.scene, content=body.content, enabled=body.enabled, version=1)
@@ -76,7 +76,7 @@ class LlmBody(BaseModel):
 
 
 @router.get("/llm/config")
-async def get_llm(_: User = Depends(get_current_admin)):
+async def get_llm(_: Admin = Depends(get_current_admin)):
     c = await LlmConfig.first()
     if not c:
         raise BizException("模型配置不存在", 404)
@@ -95,7 +95,7 @@ async def get_llm(_: User = Depends(get_current_admin)):
 
 
 @router.put("/llm/config")
-async def save_llm(body: LlmBody, _: User = Depends(get_current_admin)):
+async def save_llm(body: LlmBody, _: Admin = Depends(get_current_admin)):
     c = await LlmConfig.first()
     if not c:
         await LlmConfig.create(**body.model_dump())
@@ -107,12 +107,12 @@ async def save_llm(body: LlmBody, _: User = Depends(get_current_admin)):
 
 
 @router.post("/llm/test")
-async def test_llm(_: User = Depends(get_current_admin)):
+async def test_llm(_: Admin = Depends(get_current_admin)):
     return fail("模型连接测试将在 M2 实现", 501)
 
 
 # ---------- 运营大屏 ----------
 
 @router.get("/dashboard/overview")
-async def dashboard(_: User = Depends(get_current_admin)):
+async def dashboard(_: Admin = Depends(get_current_admin)):
     return fail("运营大屏将在 M4 实现", 501)

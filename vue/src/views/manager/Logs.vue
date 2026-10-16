@@ -25,7 +25,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import request from '../../utils/request'
+import { adminRequest as request } from '../../utils/request'
 
 const records = ref([])
 const total = ref(0)

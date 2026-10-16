@@ -63,7 +63,8 @@ def login(u, p):
 
 
 try:
-    token = login("admin", "admin123")
+    req("POST", "/api/auth/register", {"username": "tester", "password": "123456"})
+    token = login("tester", "123456")
     res = req("POST", "/api/fto/analysis", {
         "title": "控弯导管 FTO（M3 mock 检索）",
         "product_description": "一种控弯导管，远端可弯曲段由拉线机构控制弯曲方向，管体材料为聚氨酯",
