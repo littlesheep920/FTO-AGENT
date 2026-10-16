@@ -267,7 +267,8 @@ class ClaimChart(Model):
     claim = fields.ForeignKeyField(
         "models.Claim", related_name="claim_charts", on_delete=fields.CASCADE)
     product_fact = fields.ForeignKeyField(
-        "models.ProductFact", related_name="claim_charts", on_delete=fields.CASCADE)
+        "models.ProductFact", related_name="claim_charts",
+        on_delete=fields.CASCADE, null=True)   # 缺失时无对应产品特征
     match_status = fields.CharField(max_length=10, null=True)  # 命中/缺失/部分/存疑
     rationale = fields.TextField(null=True)
     evidence_product = fields.CharField(max_length=500, null=True)

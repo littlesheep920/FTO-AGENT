@@ -27,6 +27,7 @@ class AgentState(TypedDict, total=False):
     # ⑥ Claim Parser / ⑦ Claim Chart Draft
     claims: list
     claim_chart: list
+    coverage: list                         # 每件专利独立权要的覆盖情况
 
     # ⑧ Reviewer
     risk_assessment: list

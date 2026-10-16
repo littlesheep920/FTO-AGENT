@@ -1,6 +1,6 @@
 """Mock 演示源：返回控弯导管领域的示例 CN 专利（明确标记 source=mock）。
 
-用途：无真实数据源/无网络时，端到端演示完整流水线。
+用途：无真实数据源/无网络时，端到端演示完整流水线（含权利要求）。
 生产环境请勿把 mock 放进 PATENT_SOURCES。
 """
 from services.base import BaseSource, PatentDoc
@@ -19,6 +19,11 @@ _SAMPLES = [
         "ipc_codes": ["A61M25/092", "A61M25/01"],
         "legal_status": "审中",
         "family": [{"patent_no": "CN115000002A", "relation": "分案"}],
+        "claims": (
+            "1. 一种可控弯曲的导引导管，其特征在于，包括：管体，具有近端和远端；"
+            "可弯曲段，设置于所述管体的远端；拉线，贯穿所述管体并与所述可弯曲段连接，用于控制所述可弯曲段弯曲。\n"
+            "2. 根据权利要求1所述的可控弯曲的导引导管，其特征在于，所述拉线为两根，对称设置于所述管体两侧。"
+        ),
     },
     {
         "patent_no": "CN114000002B",
@@ -33,6 +38,11 @@ _SAMPLES = [
         "ipc_codes": ["A61M25/092"],
         "legal_status": "有效",
         "family": [],
+        "claims": (
+            "1. 一种拉线驱动的可调弯导管，其特征在于，包括：管体；弯曲段，位于所述管体远端；"
+            "两根拉线，对称设置于所述弯曲段内；手柄，设置于所述管体近端，所述手柄上的旋钮与所述拉线连接，"
+            "用于控制所述弯曲段的偏转角度。"
+        ),
     },
     {
         "patent_no": "CN113000003A",
@@ -47,6 +57,10 @@ _SAMPLES = [
         "ipc_codes": ["A61M25/092", "A61M25/01"],
         "legal_status": "审中",
         "family": [],
+        "claims": (
+            "1. 一种形状记忆合金控弯导管，其特征在于，所述导管的弯曲段由镍钛形状记忆合金制成，"
+            "通过温度变化驱动所述弯曲段变形。"
+        ),
     },
     {
         "patent_no": "CN112000004B",
@@ -60,6 +74,9 @@ _SAMPLES = [
         "ipc_codes": ["A61M25/10"],
         "legal_status": "失效",
         "family": [],
+        "claims": (
+            "1. 一种球囊导管弯曲控制机构，其特征在于，通过改变球囊内压力实现导管弯曲角度的调节。"
+        ),
     },
     {
         "patent_no": "CN111000005A",
@@ -74,6 +91,9 @@ _SAMPLES = [
         "ipc_codes": ["A61M25/092"],
         "legal_status": "有效",
         "family": [{"patent_no": "CN111000006A", "relation": "同族"}],
+        "claims": (
+            "1. 一种双拉线偏转导管，其特征在于，包括：管体；两根拉线，分别控制所述导管远端的两个方向的偏转。"
+        ),
     },
 ]
 
@@ -92,5 +112,6 @@ class MockSource(BaseSource):
                 legal_status=s["legal_status"], family=s["family"],
                 source=self.name,
                 source_url=f"https://patents.google.com/patent/{s['patent_no']}/zh",
+                raw=s,   # 含 claims，供 Claim Parser 读取
             ))
         return docs

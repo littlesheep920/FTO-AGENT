@@ -17,7 +17,7 @@ def _fact_to_dict(f) -> dict:
 
 def _extract_rule(desc: str) -> list:
     """规则引擎：按句切分 + 关键词；缺弯曲控制信息则标记未知项。"""
-    parts = [p.strip() for p in re.split(r"[。；;\n]", desc) if p.strip()]
+    parts = [p.strip() for p in re.split(r"[。；;，,\n]", desc) if p.strip()]
     facts = [{"feature": f"特征{i + 1}", "feature_type": "结构", "value": p, "is_unknown": 0}
              for i, p in enumerate(parts)]
     if not facts:

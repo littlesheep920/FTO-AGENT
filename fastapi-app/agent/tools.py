@@ -40,11 +40,14 @@ def get_claims(patent_no: str) -> list:
 
 @tool
 def split_claims(claim_text: str) -> list:
-    """将权利要求切分为技术要素。M4 实现。"""
-    return []
+    """将权利要求切分为技术要素。"""
+    from agent.claim_utils import split_elements
+    return split_elements(claim_text)
 
 
 @tool
 def compare_features(product_feature: str, claim_element: str) -> str:
-    """比对产品特征与权利要求要素，返回 命中/缺失/部分/存疑。M4 实现。"""
-    return "存疑"
+    """比对产品特征与权利要求要素，返回 命中/缺失/部分/存疑。"""
+    from agent.claim_utils import ratio_to_status, rule_match
+    ratio, _ = rule_match(product_feature, claim_element)
+    return ratio_to_status(ratio)

@@ -77,6 +77,7 @@ async def run_analysis(analysis_id: int) -> dict:
         "legal_statuses": [],
         "claims": [],
         "claim_chart": [],
+        "coverage": [],
         "risk_assessment": [],
         "risk_summary": None,
         "dossier": None,
