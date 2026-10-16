@@ -39,9 +39,18 @@ def split_claims(full_text: str) -> list:
 
 
 def split_elements(claim_text: str) -> list:
-    """把一条权利要求切分为技术要素（按 ；/； 优先，逗号次之）。"""
-    text = re.sub(r"其特征在于[，,:：]?", "", claim_text)
+    """把一条权利要求切分为技术要素。
+
+    去掉前序（"一种...，"标题 + "其特征在于" + "包括："），
+    再按 ；； 切分（单个时按逗号切）。
+    """
+    text = claim_text
+    text = re.sub(r"其特征在于[，,:：]?", "", text)
     text = re.sub(r"^\d+[\.、．]\s*", "", text)
+    # 去标题前序 "一种XX，"
+    text = re.sub(r"^一种[^，,]*[，,]\s*", "", text)
+    # 去 "包括："
+    text = re.sub(r"^包括[：:，,]?\s*", "", text)
     parts = [p.strip() for p in re.split(r"[；;]", text) if p.strip()]
     if len(parts) <= 1:
         parts = [p.strip() for p in re.split(r"，", text) if p.strip()]

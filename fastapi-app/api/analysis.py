@@ -1,13 +1,18 @@
 """FTO 分析：创建 / 列表 / 详情 / 删除 / 执行 / 追问 / 状态 / 卷宗 / 导出。"""
 import json
+import os
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
+import settings
 from agent import graph as agent_graph
 from common.deps import get_current_user
 from common.exception import BizException
 from common.response import fail, ok
+from exports import pdf as pdf_export
 from models import AgentRunLog, Analysis, Clarification, ProductFact, User
 
 router = APIRouter()
@@ -202,9 +207,23 @@ async def export_markdown(aid: int, user: User = Depends(get_current_user)):
         raise BizException("分析不存在", 404)
     if not a.dossier_markdown:
         raise BizException("卷宗尚未生成", 400)
-    return ok({"markdown": a.dossier_markdown})
+    return Response(
+        content=a.dossier_markdown,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="FTO_dossier_{aid}.md"'},
+    )
 
 
 @router.get("/analysis/{aid}/export/pdf")
 async def export_pdf(aid: int, user: User = Depends(get_current_user)):
-    return fail("PDF 导出将在 M5 实现", 501)
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    if not a.dossier_markdown:
+        raise BizException("卷宗尚未生成", 400)
+    os.makedirs(settings.DATA_DIR, exist_ok=True)
+    pdf_path = os.path.join(settings.DATA_DIR, f"dossier_{aid}.pdf")
+    await run_in_threadpool(pdf_export.render, a.dossier_markdown, pdf_path,
+                            a.title or "FTO 分析卷宗")
+    return FileResponse(pdf_path, media_type="application/pdf",
+                        filename=f"FTO_dossier_{aid}.pdf")

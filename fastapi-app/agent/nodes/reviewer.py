@@ -18,10 +18,11 @@ def _build_dossier(state: dict, summary: dict, verdict: str, exec_summary: str) 
         "## 2. 检索策略",
         f"- 检索式：{plan.get('search_expressions', [])}",
         f"- IPC/CPC 锚点：{plan.get('ipc_anchors', [])}",
-        f"- 数据源：{plan.get('data_sources', [])}",
-        "",
-        "## 3. 专利清单",
+        f"- 计划数据源：{plan.get('data_sources', [])}",
     ]
+    actual_sources = sorted({p.get("source") for p in patents if p.get("source")})
+    lines.append(f"- 实际命中源：{actual_sources or '无'}")
+    lines += ["", "## 3. 专利清单"]
     if patents:
         if any(p.get("source") == "mock" for p in patents):
             lines.append("> ⚠️ 当前为演示数据（mock），非真实检索结果")
