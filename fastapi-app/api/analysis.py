@@ -95,13 +95,14 @@ async def run_analysis(aid: int, user: User = Depends(get_current_user)):
             "status": 3,
             "need_clarification": True,
             "questions": result.get("clarification_questions", []),
+            "degraded": result.get("degraded"),
         })
     if result.get("error"):
         a.status = 5
         await a.save()
         return fail(f"分析执行失败：{result['error']}", 500)
 
-    return ok({"status": 4, "dossier": result.get("dossier")})
+    return ok({"status": 4, "dossier": result.get("dossier"), "degraded": result.get("degraded")})
 
 
 @router.post("/analysis/{aid}/clarify")
@@ -143,6 +144,18 @@ async def clarify(aid: int, body: ClarifyBody, user: User = Depends(get_current_
         return fail(f"分析执行失败：{result['error']}", 500)
 
     return ok({"status": 4, "dossier": result.get("dossier")})
+
+
+@router.get("/analysis/{aid}/facts")
+async def list_facts(aid: int, user: User = Depends(get_current_user)):
+    a = await _resolve(aid, user)
+    if not a:
+        raise BizException("分析不存在", 404)
+    rows = await ProductFact.filter(analysis_id=aid).order_by("id")
+    return ok([{
+        "id": f.id, "feature": f.feature, "feature_type": f.feature_type,
+        "value": f.value, "is_unknown": f.is_unknown, "status": f.status,
+    } for f in rows])
 
 
 @router.get("/analysis/{aid}/status")

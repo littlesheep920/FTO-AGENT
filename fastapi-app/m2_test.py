@@ -15,7 +15,8 @@ env = dict(os.environ)
 env["DB_ENGINE"] = "tortoise.backends.sqlite"
 env["DB_NAME"] = "data/m2_test.sqlite3"
 env["AUTO_CREATE_SCHEMA"] = "1"
-env.pop("LLM_API_KEY", None)  # 确保走规则引擎降级路径
+env["LLM_API_KEY"] = ""
+env.pop("DEEPSEEK_API_KEY", None)  # 确保走规则引擎降级路径
 
 db = os.path.join(HERE, "data", "m2_test.sqlite3")
 if os.path.exists(db):

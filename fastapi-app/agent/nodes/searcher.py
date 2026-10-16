@@ -19,4 +19,4 @@ async def searcher_node(state: dict) -> dict:
         {"patents": 0, "note": "M3 接入真实数据源（Google Patents/Espacenet/PATENTSCOPE）"},
         None, int((time.time() - t0) * 1000), 2,   # status=2 降级
     )
-    return {"patents": [], "degraded": True, "step": "searcher"}
+    return {"patents": [], "step": "searcher"}

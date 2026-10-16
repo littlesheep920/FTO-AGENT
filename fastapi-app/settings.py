@@ -29,7 +29,7 @@ TOKEN_TTL_DAYS = int(_get("TOKEN_TTL_DAYS", "7"))
 PASSWORD_ITERATIONS = int(_get("PASSWORD_ITERATIONS", "100000"))
 
 # ---------- 大模型（M2+ 使用） ----------
-LLM_API_KEY = _get("LLM_API_KEY", "")
+LLM_API_KEY = _get("LLM_API_KEY", "") or _get("DEEPSEEK_API_KEY", "")
 LLM_BASE_URL = _get("LLM_BASE_URL", "https://api.deepseek.com/v1")
 LLM_CHAT_MODEL = _get("LLM_CHAT_MODEL", "deepseek-chat")
 LLM_VISION_MODEL = _get("LLM_VISION_MODEL", "")
