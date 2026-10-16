@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+import settings
 from common.deps import get_current_admin
 from common.exception import BizException
 from common.response import fail, ok
@@ -79,8 +80,15 @@ async def get_llm(_: User = Depends(get_current_admin)):
     c = await LlmConfig.first()
     if not c:
         raise BizException("模型配置不存在", 404)
+    db_key = c.api_key or ""
+    env_key = settings.LLM_API_KEY or ""
+    effective = db_key or env_key
     return ok({
-        "provider": c.provider, "base_url": c.base_url, "api_key": c.api_key,
+        "provider": c.provider, "base_url": c.base_url,
+        # 安全：不返回完整 Key，只返回掩码 + 是否已配置
+        "api_key": ("****" + effective[-4:]) if effective else "",
+        "api_key_configured": bool(effective),
+        "api_key_source": "database" if db_key else ("env" if env_key else "none"),
         "chat_model": c.chat_model, "vision_model": c.vision_model,
         "embed_model": c.embed_model, "enabled": c.enabled,
     })

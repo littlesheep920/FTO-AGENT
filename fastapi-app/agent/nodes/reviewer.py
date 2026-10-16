@@ -38,6 +38,10 @@ def _build_dossier(state: dict, summary: dict, verdict: str, exec_summary: str) 
             lines.append(f"| {c.get('patent_no', '')} | 权要{c.get('claim_no', '')} | {c.get('element', '')} | {c.get('match_status', '')} |")
     else:
         lines.append("（暂无对照记录）")
+    charted = {c.get("patent_no") for c in chart}
+    uncovered = [p.get("patent_no") for p in patents if p.get("patent_no") not in charted]
+    if uncovered:
+        lines.append(f"> 以下专利未进行要素比对（无权利要求数据，需人工核验）：{'、'.join(uncovered)}")
 
     lines += ["", "## 5. 风险分级",
               f"- 高风险 {summary['high']} 件 / 中风险 {summary['medium']} 件 / 低风险 {summary['low']} 件 / 排除 {summary['excluded']} 件",

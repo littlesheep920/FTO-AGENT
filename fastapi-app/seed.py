@@ -49,10 +49,11 @@ async def seed_all():
         )
 
     # 4. 模型配置（默认 DeepSeek，无 Key 时降级规则引擎）
+    # 注意：不把环境变量里的 API Key 写入数据库（Key 只存在环境变量，llm.py 运行时回退读取）
     if not await LlmConfig.exists():
         await LlmConfig.create(
             provider="deepseek", base_url=settings.LLM_BASE_URL,
-            api_key=settings.LLM_API_KEY, chat_model=settings.LLM_CHAT_MODEL,
+            api_key="", chat_model=settings.LLM_CHAT_MODEL,
             vision_model=settings.LLM_VISION_MODEL, embed_model=settings.LLM_EMBED_MODEL,
             enabled=1,
         )
